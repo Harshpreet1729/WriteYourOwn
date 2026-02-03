@@ -3,7 +3,8 @@ name = "django-project"
 version = "0.1.0"
 description = ""
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11,<3.13"
+
 
 authors = [
     { name = "Harshpreet1729", email = "harshp4466@gmail.com" }
