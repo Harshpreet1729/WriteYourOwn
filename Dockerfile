@@ -1,4 +1,4 @@
-FROM python:3.13.5-bullseye
+FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1
 
 RUN apt update
@@ -15,6 +15,8 @@ WORKDIR /code
 RUN pip install poetry
 
 COPY pyproject.toml poetry.lock ./
+RUN poetry install --no-root
+COPY . .
 
 RUN poetry install --no-root
 
