@@ -23,9 +23,8 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # FIXED: Reads from env var. Example env var: "myapp.com,myapp.onrender.com"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 
-
-CSRF_TRUSTED_ORIGINS = ['https://articleswriter-production.up.railway.app']
 
 ADMIN_URL = os.getenv("ADMIN_URL", "admin")
 
