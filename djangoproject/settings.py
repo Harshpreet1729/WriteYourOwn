@@ -22,9 +22,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key-change-this-i
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # FIXED: Reads from env var. Example env var: "myapp.com,myapp.onrender.com"
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+ALLOWED_HOSTS = ['articleswriter-production.up.railway.app', '127.0.0.1', 'localhost']
 
+CSRF_TRUSTED_ORIGINS = ['https://articleswriter-production.up.railway.app']
 
 ADMIN_URL = os.getenv("ADMIN_URL", "admin")
 
@@ -51,7 +51,7 @@ DJANGO_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'django.contrib.postgres',
-    'django.contrib.sites',  # <--- ADD THIS LINE
+    'django.contrib.sites',
 ]
 
 THIRD_PARTY_APPS = [
@@ -73,7 +73,7 @@ SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # WhiteNoise must be above SessionMiddleware
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -95,7 +95,6 @@ if DEBUG:
         'django_browser_reload.middleware.BrowserReloadMiddleware',
     ]
     
-    # Internal IP logic for Docker/Localhost
     try:
         hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
         docker_ips = [ip[:-1] + "1" for ip in ips]
@@ -122,9 +121,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'djangoproject.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-# FIXED: Added default SQLite fallback to prevent build crashes if DATABASE_URL is missing
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -132,10 +128,8 @@ DATABASES = {
     )
 }
 
-# Customize user model
 AUTH_USER_MODEL = "app.UserProfile"
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     { 'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
     { 'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
@@ -143,28 +137,24 @@ AUTH_PASSWORD_VALIDATORS = [
     { 'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
 
-# Email Settings
 DEFAULT_FROM_EMAIL = os.getenv("MAILGUN_EMAIL", "noreply@example.com")
 
 ANYMAIL = {
-    "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY"),
+    "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY", "None"),
     "SEND_DEFAULTS": {"tags": {"django_project"}},
 }
 EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
 
-# Authentication Redirects
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'account_login'
 
-# Allauth settings
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_EMAIL_VERIFICATION = "optional" # Changed from True to avoid blocking dev if email fails
+ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 
-# Internationalization
 LANGUAGE_CODE = 'en'
 TIME_ZONE = 'UTC'
 USE_I18N = True
@@ -174,7 +164,6 @@ LOCALE_PATHS = [
     BASE_DIR / "locale"
 ]
 
-# Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -187,4 +176,3 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"
     }
 }
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
