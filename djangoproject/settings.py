@@ -24,9 +24,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 # FIXED: Reads from env var. Example env var: "myapp.com,myapp.onrender.com"
 ALLOWED_HOSTS = ['articleswriter-production.up.railway.app', '127.0.0.1', 'localhost']
 
-# FIXED: Required for Django 4.0+ / 6.0 over HTTPS. 
-# Example env var: "https://myapp.com,https://myapp.onrender.com"
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://127.0.0.1,http://localhost").split(",")
+CSRF_TRUSTED_ORIGINS = ['https://articleswriter-production.up.railway.app']
 
 ADMIN_URL = os.getenv("ADMIN_URL", "admin")
 
