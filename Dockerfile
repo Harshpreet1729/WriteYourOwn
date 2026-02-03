@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 ENV PYTHONUNBUFFERED=1
 
@@ -14,10 +14,8 @@ COPY pyproject.toml poetry.lock ./
 RUN pip install poetry && poetry install --no-root
 
 COPY start-django.sh /code/start-django.sh
-RUN chmod +x /code/start-django.sh
-
 COPY . .
 
 EXPOSE 8000
 
-ENTRYPOINT ["/code/start-django.sh"]
+ENTRYPOINT ["sh", "/code/start-django.sh"]
