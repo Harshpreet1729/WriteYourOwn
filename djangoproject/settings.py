@@ -147,7 +147,7 @@ AUTH_PASSWORD_VALIDATORS = [
 DEFAULT_FROM_EMAIL = os.getenv("MAILGUN_EMAIL", "noreply@example.com")
 
 ANYMAIL = {
-    "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY", "None"),
+    "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY"),
     "SEND_DEFAULTS": {"tags": {"django_project"}},
 }
 EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
