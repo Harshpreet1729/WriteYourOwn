@@ -22,7 +22,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key-change-this-i
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # FIXED: Reads from env var. Example env var: "myapp.com,myapp.onrender.com"
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+ALLOWED_HOSTS = ['articleswriter-production.up.railway.app', '127.0.0.1', 'localhost']
 
 # FIXED: Required for Django 4.0+ / 6.0 over HTTPS. 
 # Example env var: "https://myapp.com,https://myapp.onrender.com"
