@@ -5,6 +5,11 @@ RUN apt update
 RUN apt install gettext -y
 RUN mkdir /code
 
+RUN pip install --upgrade pip
+COPY pyproject.toml poetry.lock ./
+RUN pip install poetry && poetry export -f requirements.txt --without-hashes > requirements.txt
+RUN pip install -r requirements.txt
+
 WORKDIR /code
 
 RUN pip install poetry
