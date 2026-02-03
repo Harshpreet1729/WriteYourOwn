@@ -2,8 +2,11 @@ FROM python:3.13-slim
 
 ENV PYTHONUNBUFFERED=1
 
-RUN apt-get update \
- && apt-get install -y gettext \
+RUN apt-get update && apt-get install -y \
+    gettext \
+    gcc \
+    libpq-dev \
+    python3-dev \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /code
