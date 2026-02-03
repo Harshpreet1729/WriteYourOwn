@@ -22,7 +22,8 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key-change-this-i
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
 # FIXED: Reads from env var. Example env var: "myapp.com,myapp.onrender.com"
-ALLOWED_HOSTS = ['articleswriter-production.up.railway.app', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+
 
 CSRF_TRUSTED_ORIGINS = ['https://articleswriter-production.up.railway.app']
 
