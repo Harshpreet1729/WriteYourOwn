@@ -13,12 +13,11 @@ class Migration(migrations.Migration):
         from django.contrib.auth import get_user_model
         
         User=get_user_model()
-        
-        if User.objects.exists():
+
+        if User.objects.filter(email="harshp4466@gmail.com").exists():
             return
-        
+
         superuser=User.objects.create_superuser(
-            username="superharsh",
             email="harshp4466@gmail.com",
             password="harsh445566p",
             last_login=timezone.now()
