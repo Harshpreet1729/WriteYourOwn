@@ -7,6 +7,7 @@ from pathlib import Path
 import dj_database_url
 import os
 import socket  # Moved import to top
+import logging
 
 
 def _env(name: str, default: str = "") -> str:
@@ -26,6 +27,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+logger = logging.getLogger(__name__)
 
 # Load environment state
 ENV_STATE = _env("ENV_STATE", "dev")
@@ -160,12 +162,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'djangoproject.wsgi.application'
 
+DATABASE_URL = _env("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600
+    "default": dj_database_url.parse(
+        DATABASE_URL,
+        conn_max_age=600,
     )
 }
+
+if DATABASES["default"]["ENGINE"] == "django.db.backends.postgresql":
+    DATABASES["default"].setdefault("OPTIONS", {})
+    # Fail fast when DB host is unreachable to avoid hanging requests.
+    DATABASES["default"]["OPTIONS"]["connect_timeout"] = int(
+        _env("DB_CONNECT_TIMEOUT", "5")
+    )
 
 AUTH_USER_MODEL = "app.UserProfile"
 
@@ -193,13 +203,21 @@ elif EMAIL_PROVIDER == "mailjet":
         "MAILJET_SENDER_EMAIL",
         _env("DEFAULT_FROM_EMAIL", "noreply@example.com"),
     )
-    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = _env("MAILJET_SMTP_HOST", "in-v3.mailjet.com")
-    EMAIL_PORT = int(_env("MAILJET_SMTP_PORT", "587"))
     EMAIL_HOST_USER = _env("MAILJET_API_KEY", "")
     EMAIL_HOST_PASSWORD = _env("MAILJET_SECRET_KEY", "")
-    EMAIL_USE_TLS = _env_bool("MAILJET_USE_TLS", True)
-    EMAIL_USE_SSL = _env_bool("MAILJET_USE_SSL", False)
+    if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+        logger.warning(
+            "EMAIL_PROVIDER=mailjet but credentials are missing; using console email backend."
+        )
+        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    else:
+        EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+        EMAIL_HOST = _env("MAILJET_SMTP_HOST", "in-v3.mailjet.com")
+        EMAIL_PORT = int(_env("MAILJET_SMTP_PORT", "587"))
+        EMAIL_USE_TLS = _env_bool("MAILJET_USE_TLS", True)
+        EMAIL_USE_SSL = _env_bool("MAILJET_USE_SSL", False)
+        # Keep auth requests responsive if SMTP is slow/unreachable.
+        EMAIL_TIMEOUT = int(_env("EMAIL_TIMEOUT", "3"))
 else:
     DEFAULT_FROM_EMAIL = _env("DEFAULT_FROM_EMAIL", "noreply@example.com")
     EMAIL_BACKEND = _env(
