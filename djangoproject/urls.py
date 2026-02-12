@@ -20,8 +20,12 @@ from django.views.generic.base import RedirectView
 from allauth.account.views import SignupView
 from django.conf import settings
 
+admin_url = str(getattr(settings, "ADMIN_URL", "admin")).strip().strip("/")
+if not admin_url:
+    admin_url = "admin"
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path(f"{admin_url}/", admin.site.urls),
     path("articles/",include("app.urls")), #this has to be include
     path("",SignupView.as_view(),name="account_signup"),
     path("accounts/signup/",RedirectView.as_view(url="/")),
