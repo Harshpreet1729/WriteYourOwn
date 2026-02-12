@@ -193,11 +193,22 @@ EMAIL_PROVIDER = os.getenv(
 
 if EMAIL_PROVIDER == "mailgun":
     DEFAULT_FROM_EMAIL = _env("MAILGUN_EMAIL", "noreply@example.com")
-    ANYMAIL = {
-        "MAILGUN_API_KEY": _env("MAILGUN_API_KEY", "None"),
-        "SEND_DEFAULTS": {"tags": {"django_project"}},
-    }
-    EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+    mailgun_api_key = _env("MAILGUN_API_KEY", "")
+    if not mailgun_api_key or mailgun_api_key.lower() == "none":
+        logger.warning(
+            "EMAIL_PROVIDER=mailgun but MAILGUN_API_KEY is missing; using console email backend."
+        )
+        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    else:
+        ANYMAIL = {
+            "MAILGUN_API_KEY": mailgun_api_key,
+            "SEND_DEFAULTS": {"tags": {"django_project"}},
+            "REQUESTS_TIMEOUT": int(_env("EMAIL_TIMEOUT", "8")),
+        }
+        mailgun_sender_domain = _env("MAILGUN_SENDER_DOMAIN", "")
+        if mailgun_sender_domain:
+            ANYMAIL["MAILGUN_SENDER_DOMAIN"] = mailgun_sender_domain
+        EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
 elif EMAIL_PROVIDER == "mailjet":
     DEFAULT_FROM_EMAIL = _env(
         "MAILJET_SENDER_EMAIL",
@@ -211,13 +222,13 @@ elif EMAIL_PROVIDER == "mailjet":
         )
         EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     else:
-        EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-        EMAIL_HOST = _env("MAILJET_SMTP_HOST", "in-v3.mailjet.com")
-        EMAIL_PORT = int(_env("MAILJET_SMTP_PORT", "587"))
-        EMAIL_USE_TLS = _env_bool("MAILJET_USE_TLS", True)
-        EMAIL_USE_SSL = _env_bool("MAILJET_USE_SSL", False)
-        # Keep auth requests responsive if SMTP is slow/unreachable.
-        EMAIL_TIMEOUT = int(_env("EMAIL_TIMEOUT", "3"))
+        # Use Mailjet API instead of SMTP to avoid outbound SMTP timeout issues.
+        ANYMAIL = {
+            "MAILJET_API_KEY": EMAIL_HOST_USER,
+            "MAILJET_SECRET_KEY": EMAIL_HOST_PASSWORD,
+            "REQUESTS_TIMEOUT": int(_env("EMAIL_TIMEOUT", "8")),
+        }
+        EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
 else:
     DEFAULT_FROM_EMAIL = _env("DEFAULT_FROM_EMAIL", "noreply@example.com")
     EMAIL_BACKEND = _env(
@@ -227,6 +238,7 @@ else:
 
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'account_login'
+EMAIL_FAIL_SILENTLY = _env_bool("EMAIL_FAIL_SILENTLY", ENV_STATE != "production")
 
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_UNIQUE_EMAIL = True
@@ -235,6 +247,7 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
 ACCOUNT_ADAPTER = "app.adapters.SafeAccountAdapter"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https" if ENV_STATE == "production" else "http"
 
 LANGUAGE_CODE = 'en'
 TIME_ZONE = 'UTC'
