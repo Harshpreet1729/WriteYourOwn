@@ -21,10 +21,33 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-fallback-key-change-this-i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
-# FIXED: Reads from env var. Example env var: "myapp.com,myapp.onrender.com"
-ALLOWED_HOSTS = ['articleswriter-production.up.railway.app', '127.0.0.1', 'localhost']
+# Hosts/origins are environment-driven with safe local defaults.
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS",
+    "articleswriter-production.up.railway.app,.up.railway.app,127.0.0.1,localhost",
+).split(",")
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
 
-CSRF_TRUSTED_ORIGINS = ['https://articleswriter-production.up.railway.app']
+default_csrf_origins = ",".join(
+    [
+        "https://articleswriter-production.up.railway.app",
+        "https://*.up.railway.app",
+        "http://localhost",
+        "http://127.0.0.1",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+)
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", default_csrf_origins).split(",")
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS if origin.strip()]
+
+railway_public_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+if railway_public_domain and railway_public_domain not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(railway_public_domain)
+if railway_public_domain:
+    railway_origin = f"https://{railway_public_domain}"
+    if railway_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(railway_origin)
 
 ADMIN_URL = os.getenv("ADMIN_URL", "admin")
 
@@ -32,6 +55,8 @@ ADMIN_URL = os.getenv("ADMIN_URL", "admin")
 if ENV_STATE == "production":
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = True
     # create a strong security posture
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -137,13 +162,36 @@ AUTH_PASSWORD_VALIDATORS = [
     { 'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
 
-DEFAULT_FROM_EMAIL = os.getenv("MAILGUN_EMAIL", "noreply@example.com")
+EMAIL_PROVIDER = os.getenv(
+    "EMAIL_PROVIDER",
+    "mailjet" if ENV_STATE == "production" else "console",
+).lower()
 
-ANYMAIL = {
-    "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY", "None"),
-    "SEND_DEFAULTS": {"tags": {"django_project"}},
-}
-EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+if EMAIL_PROVIDER == "mailgun":
+    DEFAULT_FROM_EMAIL = os.getenv("MAILGUN_EMAIL", "noreply@example.com")
+    ANYMAIL = {
+        "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY", "None"),
+        "SEND_DEFAULTS": {"tags": {"django_project"}},
+    }
+    EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
+elif EMAIL_PROVIDER == "mailjet":
+    DEFAULT_FROM_EMAIL = os.getenv(
+        "MAILJET_SENDER_EMAIL",
+        os.getenv("DEFAULT_FROM_EMAIL", "noreply@example.com"),
+    )
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = os.getenv("MAILJET_SMTP_HOST", "in-v3.mailjet.com")
+    EMAIL_PORT = int(os.getenv("MAILJET_SMTP_PORT", "587"))
+    EMAIL_HOST_USER = os.getenv("MAILJET_API_KEY", "")
+    EMAIL_HOST_PASSWORD = os.getenv("MAILJET_SECRET_KEY", "")
+    EMAIL_USE_TLS = os.getenv("MAILJET_USE_TLS", "True").lower() == "true"
+    EMAIL_USE_SSL = os.getenv("MAILJET_USE_SSL", "False").lower() == "true"
+else:
+    DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@example.com")
+    EMAIL_BACKEND = os.getenv(
+        "EMAIL_BACKEND",
+        "django.core.mail.backends.console.EmailBackend",
+    )
 
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'account_login'
